@@ -32,7 +32,8 @@ int main() {
       strcat(file_path, pDirent->d_name);
       int fd = open(file_path, O_RDONLY | O_NONBLOCK);
       if (is_suitable(fd)) {
-        printf("found event with support for hotkey (%d): %s\n", HOTKEY, file_path);
+        printf("found event with support for hotkey (%d): %s\n", HOTKEY,
+               file_path);
         fds[fds_c].fd = fd;
         fds[fds_c].events = POLLIN;
         fds_c++;
@@ -75,6 +76,7 @@ int main() {
             if (toggle) {
               thread_stop = true;
               pthread_join(thread, NULL);
+              thread_stop = false;
             } else {
               pthread_create(&thread, NULL, autoclick, &uinput);
             }
@@ -121,7 +123,6 @@ void *autoclick(void *arg) {
   for (;;) {
     const struct timespec time = {.tv_sec = 0, .tv_nsec = DELAY_MS * 1000000};
     if (thread_stop) {
-      thread_stop = false;
       pthread_exit(0);
     }
     write(uinput, &btn_down, sizeof(btn_down));

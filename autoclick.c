@@ -14,6 +14,7 @@
 volatile bool thread_stop = false;
 
 bool is_suitable(int fd);
+void setup_uinput(int fd);
 void *autoclick(void *arg);
 
 int main() {
@@ -47,18 +48,7 @@ int main() {
   fds = realloc(fds, fds_c * sizeof(fds[0]));
 
   int uinput = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
-
-  ioctl(uinput, UI_SET_EVBIT, EV_KEY);
-  ioctl(uinput, UI_SET_KEYBIT, BTN_LEFT);
-
-  struct uinput_setup usetup = {0};
-  usetup.id.bustype = BUS_USB;
-  usetup.id.vendor = 0x1234;
-  usetup.id.product = 0x5678;
-  strcpy(usetup.name, "Autoclicker");
-
-  ioctl(uinput, UI_DEV_SETUP, &usetup);
-  ioctl(uinput, UI_DEV_CREATE);
+  setup_uinput(uinput);
 
   bool toggle = false;
 
@@ -93,6 +83,20 @@ int main() {
 
   return 0;
 }
+
+void setup_uinput(int fd){
+  ioctl(fd, UI_SET_EVBIT, EV_KEY);
+  ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);
+
+  struct uinput_setup usetup = {0};
+  usetup.id.bustype = BUS_USB;
+  usetup.id.vendor = 0x1234;
+  usetup.id.product = 0x5678;
+  strcpy(usetup.name, "Autoclicker");
+
+  ioctl(fd, UI_DEV_SETUP, &usetup);
+  ioctl(fd, UI_DEV_CREATE);
+};
 
 bool is_suitable(int fd) {
   size_t nchar = KEY_MAX / 8 + 1;

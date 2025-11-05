@@ -58,22 +58,27 @@ int main() {
   struct input_event ie = {0};
   for (;;) {
     int ret = poll(fds, fds_c, -1);
-    if (ret > 0) {
-      for (int i = 0; i < fds_c; i++) {
-        if (fds[i].revents & POLLIN) {
-          read(fds[i].fd, &ie, sizeof(ie));
-          if (ie.code == HOTKEY && ie.type == 1 && ie.value == 0) {
-            if (toggle) {
-              thread_stop = true;
-              pthread_join(thread, NULL);
-              thread_stop = false;
-            } else {
-              pthread_create(&thread, NULL, autoclick, &uinput);
-            }
-            toggle = !toggle;
-            printf("%s\n", toggle ? "Enabled" : "Disabled");
-          }
+
+    if (ret < 1) {
+      continue;
+    }
+
+    for (int i = 0; i < fds_c; i++) {
+      if ((fds[i].revents & POLLIN) == false) {
+        continue;
+      }
+
+      read(fds[i].fd, &ie, sizeof(ie));
+      if (ie.code == HOTKEY && ie.type == 1 && ie.value == 0) {
+        if (toggle) {
+          thread_stop = true;
+          pthread_join(thread, NULL);
+          thread_stop = false;
+        } else {
+          pthread_create(&thread, NULL, autoclick, &uinput);
         }
+        toggle = !toggle;
+        printf("%s\n", toggle ? "Enabled" : "Disabled");
       }
     }
   }
@@ -84,9 +89,9 @@ int main() {
   return 0;
 }
 
-void setup_uinput(int fd){
+void setup_uinput(int fd) {
   ioctl(fd, UI_SET_EVBIT, EV_KEY);
-  ioctl(fd, UI_SET_KEYBIT, BTN_LEFT);
+  ioctl(fd, UI_SET_KEYBIT, KEY_TO_CLICK);
 
   struct uinput_setup usetup = {0};
   usetup.id.bustype = BUS_USB;
@@ -107,12 +112,12 @@ bool is_suitable(int fd) {
 
 const struct input_event btn_down = {
     .type = EV_KEY,
-    .code = BTN_LEFT,
+    .code = KEY_TO_CLICK,
     .value = 1,
 };
 const struct input_event btn_up = {
     .type = EV_KEY,
-    .code = BTN_LEFT,
+    .code = KEY_TO_CLICK,
     .value = 0,
 };
 const struct input_event report = {
